@@ -101,3 +101,37 @@ class CityGame:
         self.used_cities.add(chosen_city)
         self.last_letter = chosen_city[-1]
         return chosen_city.capitalize()
+    
+class GameManager:
+    # Фасад для управления игрой
+    def __init__(self, json_file: JsonFile, cities_serializer: CitiesSerializer, city_game: CityGame):
+        self.json_file = json_file
+        self.cities_serializer = cities_serializer
+        self.city_game = city_game
+
+    def __call__(self) -> None:
+        # Запуск игры
+        self.city_game.start_game()
+        while True:
+            # Ход человека
+            human_input = input("Ваш ход: ").strip()
+            if not self.city_game.human_turn(human_input):
+                print("Вы проиграли!")
+                break
+            
+            # Ход компьютера
+            computer_city = self.city_game.computer_turn()
+            if not computer_city:
+                print("Компьютер проиграл!")
+                break
+            print(f"Компьютер: {computer_city}")
+
+if __name__ == "__main__":
+    # Инициализация компонентов
+    json_file = JsonFile("cities.json")
+    cities_serializer = CitiesSerializer(json_file.read_data())
+    city_game = CityGame(cities_serializer)
+    
+    # Запуск игры через фасад
+    game_manager = GameManager(json_file, cities_serializer, city_game)
+    game_manager()
