@@ -51,3 +51,53 @@ class CitiesSerializer:
         # Получить все города
         return self.cities
     
+class CityGame:
+    # Класс для управления логикой игры
+    def __init__(self, cities: CitiesSerializer):
+        self.all_cities = {city.name.lower(): city for city in cities.get_all_cities()}
+        self.used_cities: Set[str] = set()
+        self.last_letter: Optional[str] = None
+        self.bad_letters: Set[str] = self._calculate_bad_letters()
+
+    def _calculate_bad_letters(self) -> Set[str]:
+        # Определить 'плохие' буквы, на которые нет городов
+        bad_letters = set()
+        for letter in 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя':
+            if not any(city.lower().startswith(letter) for city in self.all_cities):
+                bad_letters.add(letter)
+        return bad_letters
+
+    def start_game(self) -> None:
+        # Начать игру с хода компьютера
+        computer_city = next(iter(self.all_cities.values()))
+        print(f"Компьютер начинает: {computer_city.name}")
+        self.used_cities.add(computer_city.name.lower())
+        self.last_letter = computer_city.name[-1].lower()
+
+    def human_turn(self, city_input: str) -> bool:
+        # Обработать ход человека
+        city = self.all_cities.get(city_input.lower())
+        if not city:
+            print("Город не найден!")
+            return False
+        if self.last_letter and city_input[0].lower() != self.last_letter:
+            print(f"Город должен начинаться на букву '{self.last_letter.upper()}'!")
+            return False
+        self.used_cities.add(city_input.lower())
+        self.last_letter = city_input[-1].lower()
+        return True
+
+    def computer_turn(self) -> Optional[str]:
+        # Ход компьютера
+        possible_cities = [
+            name for name in self.all_cities
+            if name[0] == self.last_letter
+            and name not in self.used_cities
+            and name[-1] not in self.bad_letters
+        ]
+        if not possible_cities:
+            return None
+        chosen_city = possible_cities[0]
+        self.used_cities.add(chosen_city)
+        self.last_letter = chosen_city[-1]
+        return chosen_city.capitalize()
